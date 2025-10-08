@@ -7,8 +7,8 @@ from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 LOG_CHAT_ID = int(os.environ.get("LOG_CHAT_ID", "0"))
 OWNER_ID = int(os.environ.get("OWNER_ID", "0"))
-WEBHOOK_URL = os.environ.get("WEBHOOK_URL", "").rstrip("/")  # https://your-service.onrender.com
-PORT = int(os.environ.get("PORT", "8000"))  # Render задаёт автоматически
+WEBHOOK_URL = os.environ.get("WEBHOOK_URL", "").rstrip("/")
+PORT = int(os.environ.get("PORT", "8000"))
 
 if not BOT_TOKEN:
     raise SystemExit("Error: BOT_TOKEN environment variable is required.")
@@ -44,17 +44,19 @@ def main():
     app.add_handler(CommandHandler("ping", ping))
 
     if WEBHOOK_URL:
-        # Используем только webhook_url, убираем webhook_url_path
-        full_webhook = f"{WEBHOOK_URL}/webhook/{BOT_TOKEN}"
+        # Уникальный путь webhook
+        webhook_path = f"/webhook/{BOT_TOKEN}"
+        full_webhook = f"{WEBHOOK_URL}{webhook_path}"
+
         print(f"Starting webhook on port {PORT}, url: {full_webhook}")
 
         app.run_webhook(
             listen="0.0.0.0",
             port=PORT,
-            webhook_url=full_webhook
+            webhook_url_path=webhook_path,  # путь на сервере
+            webhook_url=full_webhook        # URL для Telegram
         )
     else:
-        # Для локальной отладки
         print("WEBHOOK_URL not set — starting polling (local mode)")
         app.run_polling()
 
