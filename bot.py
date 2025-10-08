@@ -2,29 +2,27 @@ import os
 from datetime import datetime
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
-from aiohttp import web
 
-# ====== Настройки через env ======
+# === Конфигурация ===
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
-LOG_CHAT_ID = int(os.environ.get("LOG_CHAT_ID", "0"))   # ID канала для логов
-OWNER_ID = int(os.environ.get("OWNER_ID", "0"))         # ID администратора
+LOG_CHAT_ID = int(os.environ.get("LOG_CHAT_ID", "0"))
+OWNER_ID = int(os.environ.get("OWNER_ID", "0"))
 WEBHOOK_URL = os.environ.get("WEBHOOK_URL", "").rstrip("/")
-PORT = int(os.environ.get("PORT", "8000"))             # Render назначает PORT
+PORT = int(os.environ.get("PORT", "8000"))
 
 if not BOT_TOKEN:
-    raise SystemExit("Error: BOT_TOKEN environment variable is required.")
+    raise SystemExit("❌ Error: BOT_TOKEN environment variable is required.")
 
 
-# ====== Обработчики команд ======
+# === Команды ===
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     now = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
-
+    
     if update.message:
-        await update.message.reply_text(
-            f"👋 Привет, {user.first_name or 'друг'}! Добро пожаловать в DualisBot."
-        )
-
+        await update.message.reply_text(f"👋 Привет, {user.first_name or 'друг'}! Ты вошёл.")
+    
+    # Логирование входа
     if user.id != OWNER_ID and LOG_CHAT_ID:
         text = (
             f"📥 Новый вход:\n"
@@ -37,32 +35,25 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def ping(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("✅ Бот живой")
+    await update.message.reply_text("✅ Бот живой!")
 
 
-# ====== Healthcheck для Render ======
-async def health(request):
-    return web.Response(text="DualisBot is alive!", status=200)
-
-
-# ====== Запуск бота ======
+# === Запуск приложения ===
 def main():
     app = ApplicationBuilder().token(BOT_TOKEN).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("ping", ping))
 
     if WEBHOOK_URL:
-        full_webhook = f"{WEBHOOK_URL}/webhook/{BOT_TOKEN}"
-        print(f"Starting webhook on port {PORT}, url: {full_webhook}")
-
-        # Добавляем healthcheck (необязательно, но полезно)
+        print(f"🚀 Запуск в режиме Webhook")
+        print(f"URL: {WEBHOOK_URL}")
         app.run_webhook(
             listen="0.0.0.0",
             port=PORT,
-            webhook_url=full_webhook
+            webhook_url=WEBHOOK_URL,  # 👈 слушаем корень "/", без /webhook/<token>
         )
     else:
-        print("WEBHOOK_URL not set — starting polling (local mode)")
+        print("⚙️ WEBHOOK_URL не указан — запуск в режиме polling")
         app.run_polling()
 
 
