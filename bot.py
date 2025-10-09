@@ -20,10 +20,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     now = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
     
     if update.message:
-        await update.message.reply_text(
-    "🤖 Dualis Robot greets you!
-Learn more about our services in the Dualis app."
-)
+        await update.message.reply_text(f"🤖 Dualis Robot greets you!
+Learn more about our services in the Dualis app {user.first_name or 'друг'}! ")
     
     # Логирование входа
     if user.id != OWNER_ID and LOG_CHAT_ID:
